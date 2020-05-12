@@ -28,6 +28,10 @@ const RadioGroup = Radio.Group;
 const Option = Select.Option;
 const { MonthPicker, RangePicker } = DatePicker;
 
+const narrowStyle = {
+  width: 50,
+};
+
 const options = [
   {
     value: 'zhejiang',
@@ -64,7 +68,7 @@ const options = [
 ];
 
 ReactDOM.render(
-  <div>
+  <>
     <Mentions style={{ width: 100 }} rows={1} />
     <Input.TextArea rows={1} style={{ width: 100 }} />
     <Button type="primary">Button</Button>
@@ -94,7 +98,10 @@ ReactDOM.render(
     <AutoComplete style={{ width: 100 }} placeholder="input here" />
     <br />
     <Input prefix="$" addonBefore="Http://" addonAfter=".com" defaultValue="mysite" />
-  </div>,
+    <Input style={narrowStyle} suffix="Y" />
+    <Input style={narrowStyle} />
+    <Input style={narrowStyle} defaultValue="1" suffix="Y" />
+  </>,
   mountNode,
 );
 ```

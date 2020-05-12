@@ -33,7 +33,7 @@ Uma solução empresarial de design e biblioteca UI para React.
 
 ## 🖥 Suporte aos ambientes
 
-- Navegadores modernos e Internet Explorer 11+ (com [polyfills](https://ant.design/docs/react/getting-started#Compatibility))
+- Navegadores modernos e Internet Explorer 11 (com [polyfills](https://ant.design/docs/react/getting-started#Compatibility))
 - Renderização no lado do servidor (server-side)
 - [Electron](https://www.electronjs.org/)
 
@@ -102,6 +102,7 @@ Veja [i18n](http://ant.design/docs/react/i18n).
 - [CodeSandbox Template](https://u.ant.design/codesandbox-repro) para relatório de erros
 - [Awesome Ant Design](https://github.com/websemantics/awesome-ant-design)
 - [Customize Theme](http://ant.design/docs/react/customize-theme)
+- [How to Apply for Being A Collaborator](https://github.com/ant-design/ant-design/wiki/Collaborators#how-to-apply-for-being-a-collaborator)
 
 ## ⌨️ Desenvolvimento
 
