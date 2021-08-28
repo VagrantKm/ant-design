@@ -2,12 +2,12 @@ import React from 'react';
 import { mount } from 'enzyme';
 import Checkbox from '..';
 import focusTest from '../../../tests/shared/focusTest';
-import { resetWarned } from '../../_util/warning';
+import { resetWarned } from '../../_util/devWarning';
 import mountTest from '../../../tests/shared/mountTest';
 import rtlTest from '../../../tests/shared/rtlTest';
 
 describe('Checkbox', () => {
-  focusTest(Checkbox);
+  focusTest(Checkbox, { refFocus: true });
   mountTest(Checkbox);
   rtlTest(Checkbox);
 

@@ -182,15 +182,14 @@ describe('Table.sorter', () => {
     jest.useFakeTimers();
     const wrapper = mount(createTable({}));
     // default show sorter tooltip
-    wrapper.find('.ant-table-column-sorters-with-tooltip').simulate('mouseenter');
+    wrapper.find('.ant-table-column-sorters').simulate('mouseenter');
     jest.runAllTimers();
     wrapper.update();
     expect(wrapper.find('.ant-tooltip-open').length).toBeTruthy();
-    wrapper.find('.ant-table-column-sorters-with-tooltip').simulate('mouseout');
+    wrapper.find('.ant-table-column-sorters').simulate('mouseout');
 
     // set table props showSorterTooltip is false
     wrapper.setProps({ showSorterTooltip: false });
-    expect(wrapper.find('.ant-table-column-sorters-with-tooltip')).toHaveLength(0);
     jest.runAllTimers();
     wrapper.update();
     expect(wrapper.find('.ant-tooltip-open')).toHaveLength(0);
@@ -199,17 +198,50 @@ describe('Table.sorter', () => {
       showSorterTooltip: false,
       columns: [{ ...column, showSorterTooltip: true }],
     });
-    wrapper.find('.ant-table-column-sorters-with-tooltip').simulate('mouseenter');
+    wrapper.find('.ant-table-column-sorters').simulate('mouseenter');
     jest.runAllTimers();
     wrapper.update();
     expect(wrapper.find('.ant-tooltip-open').length).toBeTruthy();
-    wrapper.find('.ant-table-column-sorters-with-tooltip').simulate('mouseout');
+    wrapper.find('.ant-table-column-sorters').simulate('mouseout');
     // set table props showSorterTooltip is true, column showSorterTooltip is false
     wrapper.setProps({
       showSorterTooltip: true,
       columns: [{ ...column, showSorterTooltip: false }],
     });
-    expect(wrapper.find('.ant-table-column-sorters-with-tooltip')).toHaveLength(0);
+    jest.runAllTimers();
+    wrapper.update();
+    expect(wrapper.find('.ant-tooltip-open')).toHaveLength(0);
+  });
+
+  it('should show correct tooltip when showSorterTooltip is an object', () => {
+    // basically copied from 'hover header show sorter tooltip'
+    jest.useFakeTimers();
+    const wrapper = mount(
+      createTable({ showSorterTooltip: { placement: 'bottom', title: 'static title' } }),
+    );
+    wrapper.find('.ant-table-column-sorters').simulate('mouseenter');
+    jest.runAllTimers();
+    wrapper.update();
+    expect(wrapper.find('.ant-tooltip-open').length).toBeTruthy();
+    wrapper.find('.ant-table-column-sorters').simulate('mouseout');
+
+    wrapper.setProps({ showSorterTooltip: false });
+    jest.runAllTimers();
+    wrapper.update();
+    expect(wrapper.find('.ant-tooltip-open')).toHaveLength(0);
+    wrapper.setProps({
+      showSorterTooltip: false,
+      columns: [{ ...column, showSorterTooltip: true }],
+    });
+    wrapper.find('.ant-table-column-sorters').simulate('mouseenter');
+    jest.runAllTimers();
+    wrapper.update();
+    expect(wrapper.find('.ant-tooltip-open').length).toBeTruthy();
+    wrapper.find('.ant-table-column-sorters').simulate('mouseout');
+    wrapper.setProps({
+      showSorterTooltip: true,
+      columns: [{ ...column, showSorterTooltip: false }],
+    });
     jest.runAllTimers();
     wrapper.update();
     expect(wrapper.find('.ant-tooltip-open')).toHaveLength(0);
@@ -272,7 +304,7 @@ describe('Table.sorter', () => {
   });
 
   // https://github.com/ant-design/ant-design/pull/12264#discussion_r218053034
-  it('should sort from begining state when toggle from different columns', () => {
+  it('should sort from beginning state when toggle from different columns', () => {
     const columns = [
       {
         title: 'name',
@@ -789,5 +821,56 @@ describe('Table.sorter', () => {
         .first()
         .hasClass('active'),
     ).toBeTruthy();
+  });
+
+  it('onChange with correct sorter for multiple', () => {
+    const groupColumns = [
+      {
+        title: 'Math Score',
+        dataIndex: 'math',
+        sorter: { multiple: 1 },
+      },
+      {
+        title: 'English Score',
+        dataIndex: 'english',
+        sorter: { multiple: 2 },
+      },
+    ];
+
+    const groupData = [
+      {
+        key: '1',
+        name: 'John Brown',
+        chinese: 98,
+        math: 60,
+        english: 70,
+      },
+    ];
+
+    const onChange = jest.fn();
+    const wrapper = mount(<Table columns={groupColumns} data={groupData} onChange={onChange} />);
+
+    function clickToMatchExpect(index, sorter) {
+      wrapper.find('.ant-table-column-sorters').at(index).simulate('click');
+
+      expect(onChange).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining(sorter),
+        expect.anything(),
+      );
+
+      onChange.mockReset();
+    }
+
+    // First
+    clickToMatchExpect(0, { field: 'math', order: 'ascend' });
+    clickToMatchExpect(0, { field: 'math', order: 'descend' });
+    clickToMatchExpect(0, { field: 'math', order: undefined });
+
+    // Last
+    clickToMatchExpect(1, { field: 'english', order: 'ascend' });
+    clickToMatchExpect(1, { field: 'english', order: 'descend' });
+    clickToMatchExpect(1, { field: 'english', order: undefined });
   });
 });

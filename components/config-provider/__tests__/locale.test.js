@@ -5,13 +5,10 @@ import LocaleProvider from '../../locale-provider';
 import zhCN from '../../locale/zh_CN';
 import enUS from '../../locale/en_US';
 import TimePicker from '../../time-picker';
+import DatePicker from '../../date-picker';
+import { openPicker, selectCell, closePicker } from '../../date-picker/__tests__/utils';
+import Pagination from '../../pagination';
 import Modal from '../../modal';
-import Form from '../../form';
-
-const delay = (timeout = 0) =>
-  new Promise(resolve => {
-    setTimeout(resolve, timeout);
-  });
 
 describe('ConfigProvider.Locale', () => {
   function $$(className) {
@@ -19,10 +16,6 @@ describe('ConfigProvider.Locale', () => {
   }
 
   it('not throw', () => {
-    if (process.env.REACT === '15') {
-      return;
-    }
-
     mount(
       <ConfigProvider locale={{}}>
         <span />
@@ -74,6 +67,51 @@ describe('ConfigProvider.Locale', () => {
     expect($$('.ant-btn-primary')[0].textContent).toBe('OK');
   });
 
+  // https://github.com/ant-design/ant-design/issues/31592
+  it('should not reset the component state when switching locale', () => {
+    class App extends React.Component {
+      state = {
+        locale: zhCN,
+      };
+
+      render() {
+        return (
+          <ConfigProvider locale={this.state.locale}>
+            <DatePicker />
+            <Pagination total={50} />
+          </ConfigProvider>
+        );
+      }
+    }
+
+    const wrapper = mount(<App />);
+
+    const datepickerInitProps = wrapper.find('.ant-picker-input input').props();
+    expect(datepickerInitProps.value).toBe('');
+    expect(datepickerInitProps.placeholder).toBe('请选择日期');
+    expect(wrapper.find('.ant-pagination-item-1').props().className).toContain(
+      'ant-pagination-item-active',
+    );
+
+    openPicker(wrapper);
+    selectCell(wrapper, 10);
+    closePicker(wrapper);
+
+    expect(wrapper.find('.ant-picker-input input').props().value).not.toBe('');
+
+    wrapper.setState({ locale: {} });
+    wrapper.find('.ant-pagination-item-3').simulate('click');
+
+    const datepickerProps = wrapper.find('.ant-picker-input input').props();
+    expect(datepickerProps.placeholder).not.toBe('请选择日期');
+    expect(datepickerProps.value).not.toBe('');
+    expect(datepickerProps.value).toContain('-10');
+
+    expect(wrapper.find('.ant-pagination-item-3').props().className).toContain(
+      'ant-pagination-item-active',
+    );
+  });
+
   describe('support legacy LocaleProvider', () => {
     function testLocale(wrapper) {
       expect(wrapper.find('input').props().placeholder).toBe(zhCN.TimePicker.placeholder);
@@ -111,43 +149,6 @@ describe('ConfigProvider.Locale', () => {
       );
 
       testLocale(wrapper);
-    });
-  });
-
-  describe('form validateMessages', () => {
-    const wrapperComponent = ({ validateMessages }) =>
-      mount(
-        <ConfigProvider locale={zhCN} form={{ validateMessages }}>
-          <Form initialValues={{ age: 18 }}>
-            <Form.Item name="test" label="姓名" rules={[{ required: true }]}>
-              <input />
-            </Form.Item>
-            <Form.Item name="age" label="年龄" rules={[{ type: 'number', len: 17 }]}>
-              <input />
-            </Form.Item>
-          </Form>
-        </ConfigProvider>,
-      );
-
-    it('set locale zhCN', async () => {
-      const wrapper = wrapperComponent({});
-
-      wrapper.find('form').simulate('submit');
-      await delay(50);
-      wrapper.update();
-
-      expect(wrapper.find('.ant-form-item-explain').first().text()).toEqual('请输入姓名');
-    });
-
-    it('set locale zhCN and set form validateMessages one item, other use default message', async () => {
-      const wrapper = wrapperComponent({ validateMessages: { required: '必须' } });
-
-      wrapper.find('form').simulate('submit');
-      await delay(50);
-      wrapper.update();
-
-      expect(wrapper.find('.ant-form-item-explain').first().text()).toEqual('必须');
-      expect(wrapper.find('.ant-form-item-explain').last().text()).toEqual('年龄必须等于17');
     });
   });
 });

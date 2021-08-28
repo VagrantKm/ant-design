@@ -8,6 +8,7 @@ exports[`RangePicker customize separator 1`] = `
     class="ant-picker-input ant-picker-input-active"
   >
     <input
+      autocomplete="off"
       placeholder="Start date"
       readonly=""
       size="12"
@@ -23,6 +24,7 @@ exports[`RangePicker customize separator 1`] = `
     class="ant-picker-input"
   >
     <input
+      autocomplete="off"
       placeholder="End date"
       readonly=""
       size="12"
@@ -43,7 +45,6 @@ exports[`RangePicker customize separator 1`] = `
     >
       <svg
         aria-hidden="true"
-        class=""
         data-icon="calendar"
         fill="currentColor"
         focusable="false"
@@ -69,6 +70,7 @@ Array [
       class="ant-picker-input ant-picker-input-active"
     >
       <input
+        autocomplete="off"
         placeholder="Start date"
         readonly=""
         size="12"
@@ -89,7 +91,6 @@ Array [
         >
           <svg
             aria-hidden="true"
-            class=""
             data-icon="swap-right"
             fill="currentColor"
             focusable="false"
@@ -108,6 +109,7 @@ Array [
       class="ant-picker-input"
     >
       <input
+        autocomplete="off"
         placeholder="End date"
         readonly=""
         size="12"
@@ -128,7 +130,6 @@ Array [
       >
         <svg
           aria-hidden="true"
-          class=""
           data-icon="calendar"
           fill="currentColor"
           focusable="false"
@@ -146,7 +147,7 @@ Array [
   <div>
     <div
       class="ant-picker-dropdown ant-picker-dropdown-range"
-      style="opacity:0"
+      style="opacity:0;pointer-events:none"
     >
       <div
         class="ant-picker-range-wrapper ant-picker-date-range-wrapper"
@@ -304,7 +305,7 @@ Array [
                           </div>
                         </td>
                         <td
-                          class="ant-picker-cell"
+                          class="ant-picker-cell ant-picker-cell-end"
                           title="2017-08-31"
                         >
                           <div
@@ -314,7 +315,7 @@ Array [
                           </div>
                         </td>
                         <td
-                          class="ant-picker-cell ant-picker-cell-in-view"
+                          class="ant-picker-cell ant-picker-cell-start ant-picker-cell-in-view"
                           title="2017-09-01"
                         >
                           <div
@@ -612,7 +613,7 @@ Array [
                           </div>
                         </td>
                         <td
-                          class="ant-picker-cell ant-picker-cell-in-view"
+                          class="ant-picker-cell ant-picker-cell-end ant-picker-cell-in-view"
                           title="2017-09-30"
                         >
                           <div
@@ -624,7 +625,7 @@ Array [
                       </tr>
                       <tr>
                         <td
-                          class="ant-picker-cell"
+                          class="ant-picker-cell ant-picker-cell-start"
                           title="2017-10-01"
                         >
                           <div
@@ -800,7 +801,7 @@ Array [
                     <tbody>
                       <tr>
                         <td
-                          class="ant-picker-cell ant-picker-cell-in-view"
+                          class="ant-picker-cell ant-picker-cell-start ant-picker-cell-in-view"
                           title="2017-10-01"
                         >
                           <div
@@ -1108,7 +1109,7 @@ Array [
                           </div>
                         </td>
                         <td
-                          class="ant-picker-cell ant-picker-cell-in-view"
+                          class="ant-picker-cell ant-picker-cell-end ant-picker-cell-in-view"
                           title="2017-10-31"
                         >
                           <div
@@ -1118,7 +1119,7 @@ Array [
                           </div>
                         </td>
                         <td
-                          class="ant-picker-cell"
+                          class="ant-picker-cell ant-picker-cell-start"
                           title="2017-11-01"
                         >
                           <div

@@ -1,4 +1,4 @@
-import OriginModal, { ModalFuncProps, destroyFns } from './Modal';
+import OriginModal, { ModalFuncProps } from './Modal';
 import confirm, {
   withWarn,
   withInfo,
@@ -6,7 +6,10 @@ import confirm, {
   withError,
   withConfirm,
   ModalStaticFunctions,
+  modalGlobalConfig,
 } from './confirm';
+import useModal from './useModal';
+import destroyFns from './destroyFns';
 
 export { ActionButtonProps } from './ActionButton';
 export { ModalProps, ModalFuncProps } from './Modal';
@@ -15,8 +18,16 @@ function modalWarn(props: ModalFuncProps) {
   return confirm(withWarn(props));
 }
 
-type Modal = typeof OriginModal & ModalStaticFunctions;
-const Modal = OriginModal as Modal;
+type ModalType = typeof OriginModal &
+  ModalStaticFunctions & {
+    useModal: typeof useModal;
+    destroyAll: () => void;
+    config: typeof modalGlobalConfig;
+  };
+
+const Modal = OriginModal as ModalType;
+
+Modal.useModal = useModal;
 
 Modal.info = function infoFn(props: ModalFuncProps) {
   return confirm(withInfo(props));
@@ -46,5 +57,7 @@ Modal.destroyAll = function destroyAllFn() {
     }
   }
 };
+
+Modal.config = modalGlobalConfig;
 
 export default Modal;

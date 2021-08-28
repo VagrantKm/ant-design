@@ -7,10 +7,18 @@ import ResponsiveObserve, {
   ScreenMap,
   responsiveArray,
 } from '../_util/responsiveObserve';
-import warning from '../_util/warning';
+import devWarning from '../_util/devWarning';
 import { ConfigContext } from '../config-provider';
 import Row from './Row';
 import DescriptionsItem from './Item';
+import { cloneElement } from '../_util/reactNode';
+
+export interface DescriptionsContextProps {
+  labelStyle?: React.CSSProperties;
+  contentStyle?: React.CSSProperties;
+}
+
+export const DescriptionsContext = React.createContext<DescriptionsContextProps>({});
 
 const DEFAULT_COLUMN_MAP: Record<Breakpoint, number> = {
   xxl: 3,
@@ -46,10 +54,10 @@ function getFilledItem(
   let clone = node;
 
   if (span === undefined || span > rowRestCol) {
-    clone = React.cloneElement(node, {
+    clone = cloneElement(node, {
       span: rowRestCol,
     });
-    warning(
+    devWarning(
       span === undefined,
       'Descriptions',
       'Sum of column `span` in a line not match `column` of Descriptions.',
@@ -99,14 +107,18 @@ export interface DescriptionsProps {
   size?: 'middle' | 'small' | 'default';
   children?: React.ReactNode;
   title?: React.ReactNode;
+  extra?: React.ReactNode;
   column?: number | Partial<Record<Breakpoint, number>>;
   layout?: 'horizontal' | 'vertical';
   colon?: boolean;
+  labelStyle?: React.CSSProperties;
+  contentStyle?: React.CSSProperties;
 }
 
 function Descriptions({
   prefixCls: customizePrefixCls,
   title,
+  extra,
   column = DEFAULT_COLUMN_MAP,
   colon = true,
   bordered,
@@ -115,6 +127,8 @@ function Descriptions({
   className,
   style,
   size,
+  labelStyle,
+  contentStyle,
 }: DescriptionsProps) {
   const { getPrefixCls, direction } = React.useContext(ConfigContext);
   const prefixCls = getPrefixCls('descriptions', customizePrefixCls);
@@ -139,34 +153,45 @@ function Descriptions({
   const rows = getRows(children, mergedColumn);
 
   return (
-    <div
-      className={classNames(prefixCls, className, {
-        [`${prefixCls}-${size}`]: size && size !== 'default',
-        [`${prefixCls}-bordered`]: !!bordered,
-        [`${prefixCls}-rtl`]: direction === 'rtl',
-      })}
-      style={style}
-    >
-      {title && <div className={`${prefixCls}-title`}>{title}</div>}
+    <DescriptionsContext.Provider value={{ labelStyle, contentStyle }}>
+      <div
+        className={classNames(
+          prefixCls,
+          {
+            [`${prefixCls}-${size}`]: size && size !== 'default',
+            [`${prefixCls}-bordered`]: !!bordered,
+            [`${prefixCls}-rtl`]: direction === 'rtl',
+          },
+          className,
+        )}
+        style={style}
+      >
+        {(title || extra) && (
+          <div className={`${prefixCls}-header`}>
+            {title && <div className={`${prefixCls}-title`}>{title}</div>}
+            {extra && <div className={`${prefixCls}-extra`}>{extra}</div>}
+          </div>
+        )}
 
-      <div className={`${prefixCls}-view`}>
-        <table>
-          <tbody>
-            {rows.map((row, index) => (
-              <Row
-                key={index}
-                index={index}
-                colon={colon}
-                prefixCls={prefixCls}
-                vertical={layout === 'vertical'}
-                bordered={bordered}
-                row={row}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className={`${prefixCls}-view`}>
+          <table>
+            <tbody>
+              {rows.map((row, index) => (
+                <Row
+                  key={index}
+                  index={index}
+                  colon={colon}
+                  prefixCls={prefixCls}
+                  vertical={layout === 'vertical'}
+                  bordered={bordered}
+                  row={row}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </DescriptionsContext.Provider>
   );
 }
 

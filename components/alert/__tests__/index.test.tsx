@@ -1,6 +1,7 @@
 import React from 'react';
-import { mount } from 'enzyme';
+import { mount, render } from 'enzyme';
 import Alert from '..';
+import Button from '../../button';
 import Tooltip from '../../tooltip';
 import Popconfirm from '../../popconfirm';
 import rtlTest from '../../../tests/shared/rtlTest';
@@ -21,20 +22,36 @@ describe('Alert', () => {
 
   it('could be closed', () => {
     const onClose = jest.fn();
-    const afterClose = jest.fn();
     const wrapper = mount(
       <Alert
         message="Warning Text Warning Text Warning TextW arning Text Warning Text Warning TextWarning Text"
         type="warning"
         closable
         onClose={onClose}
-        afterClose={afterClose}
       />,
     );
     wrapper.find('.ant-alert-close-icon').simulate('click');
-    expect(onClose).toHaveBeenCalled();
     jest.runAllTimers();
-    expect(afterClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  describe('action of Alert', () => {
+    it('custom action', () => {
+      const wrapper = render(
+        <Alert
+          message="Success Tips"
+          type="success"
+          showIcon
+          action={
+            <Button size="small" type="text">
+              UNDO
+            </Button>
+          }
+          closable
+        />,
+      );
+      expect(wrapper).toMatchSnapshot();
+    });
   });
 
   describe('data and aria props', () => {
@@ -58,10 +75,8 @@ describe('Alert', () => {
     });
   });
 
-  const testIt = process.env.REACT === '15' ? it.skip : it;
-  testIt('ErrorBoundary', () => {
-    // TODO: Change to @ts-expect-error once typescript is at 3.9
-    // @ts-ignore
+  it('ErrorBoundary', () => {
+    // @ts-expect-error
     // eslint-disable-next-line react/jsx-no-undef
     const ThrowError = () => <NotExisted />;
     const wrapper = mount(
@@ -70,13 +85,14 @@ describe('Alert', () => {
       </ErrorBoundary>,
     );
     // eslint-disable-next-line jest/no-standalone-expect
-    expect(wrapper.render()).toMatchSnapshot();
+    expect(wrapper.text()).toContain('ReferenceError: NotExisted is not defined');
   });
 
   it('could be used with Tooltip', async () => {
+    const ref = React.createRef<any>();
     jest.useRealTimers();
     const wrapper = mount(
-      <Tooltip title="xxx" mouseEnterDelay={0}>
+      <Tooltip title="xxx" mouseEnterDelay={0} ref={ref}>
         <Alert
           message="Warning Text Warning Text Warning TextW arning Text Warning Text Warning TextWarning Text"
           type="warning"
@@ -85,7 +101,7 @@ describe('Alert', () => {
     );
     wrapper.find('.ant-alert').simulate('mouseenter');
     await sleep(0);
-    expect(wrapper.find<Tooltip>(Tooltip).instance().getPopupDomNode()).toBeTruthy();
+    expect(ref.current.getPopupDomNode()).toBeTruthy();
     jest.useFakeTimers();
   });
 

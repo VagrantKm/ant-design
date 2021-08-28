@@ -2,8 +2,9 @@
 // This config is for building dist files
 const getWebpackConfig = require('@ant-design/tools/lib/getWebpackConfig');
 const IgnoreEmitPlugin = require('ignore-emit-webpack-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const EsbuildPlugin = require('esbuild-webpack-plugin').default;
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const { ESBuildMinifyPlugin } = require('esbuild-loader');
+const DuplicatePackageCheckerPlugin = require('duplicate-package-checker-webpack-plugin');
 const darkVars = require('./scripts/dark-vars');
 const compactVars = require('./scripts/compact-vars');
 
@@ -32,6 +33,24 @@ function externalMoment(config) {
     commonjs: 'moment',
     amd: 'moment',
   };
+}
+
+function injectWarningCondition(config) {
+  config.module.rules.forEach(rule => {
+    // Remove devWarning if needed
+    if (rule.test.test('test.tsx')) {
+      rule.use = [
+        ...rule.use,
+        {
+          loader: 'string-replace-loader',
+          options: {
+            search: 'devWarning(',
+            replace: "if (process.env.NODE_ENV !== 'production') devWarning(",
+          },
+        },
+      ];
+    }
+  });
 }
 
 function processWebpackThemeConfig(themeConfig, theme, vars) {
@@ -68,6 +87,10 @@ const webpackConfig = getWebpackConfig(false);
 const webpackDarkConfig = getWebpackConfig(false);
 const webpackCompactConfig = getWebpackConfig(false);
 
+webpackConfig.forEach(config => {
+  injectWarningCondition(config);
+});
+
 if (process.env.RUN_ENV === 'PRODUCTION') {
   webpackConfig.forEach(config => {
     ignoreMomentLocale(config);
@@ -76,19 +99,27 @@ if (process.env.RUN_ENV === 'PRODUCTION') {
     // Reduce non-minified dist files size
     config.optimization.usedExports = true;
     // use esbuild
-    if (process.env.CSB_REPO) {
-      config.optimization.minimizer[0] = new EsbuildPlugin();
+    if (process.env.ESBUILD || process.env.CSB_REPO) {
+      config.optimization.minimizer[0] = new ESBuildMinifyPlugin({
+        target: 'es2015',
+        css: true,
+      });
     }
-    // skip codesandbox ci
-    if (!process.env.CSB_REPO) {
-      config.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: 'static',
-          openAnalyzer: false,
-          reportFilename: '../report.html',
-        }),
-      );
-    }
+
+    config.plugins.push(
+      new BundleAnalyzerPlugin({
+        analyzerMode: 'static',
+        openAnalyzer: false,
+        reportFilename: '../report.html',
+      }),
+    );
+
+    config.plugins.push(
+      new DuplicatePackageCheckerPlugin({
+        verbose: true,
+        emitError: true,
+      }),
+    );
   });
 
   processWebpackThemeConfig(webpackDarkConfig, 'dark', darkVars);

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { ValidateMessages } from 'rc-field-form/lib/interface';
-import warning from '../_util/warning';
+import devWarning from '../_util/devWarning';
 
 import { ModalLocale, changeConfirmLocale } from '../modal/locale';
 import { TransferLocale as TransferLocaleForEmpty } from '../empty';
@@ -18,21 +18,25 @@ export interface Locale {
   locale: string;
   Pagination?: PaginationLocale;
   DatePicker?: DatePickerLocale;
-  TimePicker?: Object;
-  Calendar?: Object;
+  TimePicker?: Record<string, any>;
+  Calendar?: Record<string, any>;
   Table?: TableLocale;
   Modal?: ModalLocale;
   Popconfirm?: PopconfirmLocale;
   Transfer?: Partial<TransferLocale>;
-  Select?: Object;
+  Select?: Record<string, any>;
   Upload?: UploadLocale;
   Empty?: TransferLocaleForEmpty;
-  global?: Object;
-  PageHeader?: Object;
-  Icon?: Object;
-  Text?: Object;
+  global?: Record<string, any>;
+  PageHeader?: { back: string };
+  Icon?: Record<string, any>;
+  Text?: Record<string, any>;
   Form?: {
+    optional?: string;
     defaultValidateMessages: ValidateMessages;
+  };
+  Image?: {
+    preview: string;
   };
 }
 
@@ -51,11 +55,15 @@ export default class LocaleProvider extends React.Component<LocaleProviderProps,
     super(props);
     changeConfirmLocale(props.locale && props.locale.Modal);
 
-    warning(
+    devWarning(
       props._ANT_MARK__ === ANT_MARK,
       'LocaleProvider',
       '`LocaleProvider` is deprecated. Please use `locale` with `ConfigProvider` instead: http://u.ant.design/locale',
     );
+  }
+
+  componentDidMount() {
+    changeConfirmLocale(this.props.locale && this.props.locale.Modal);
   }
 
   componentDidUpdate(prevProps: LocaleProviderProps) {

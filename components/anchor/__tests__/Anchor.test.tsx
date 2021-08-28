@@ -307,7 +307,8 @@ describe('Anchor Render', () => {
       let start = 0;
 
       const handler = () => {
-        return (start += 1000);
+        start += 1000;
+        return start;
       };
 
       return jest.spyOn(Date, 'now').mockImplementation(handler);
@@ -358,6 +359,23 @@ describe('Anchor Render', () => {
     expect(onChange).toHaveBeenCalledWith(hash2);
   });
 
+  // https://github.com/ant-design/ant-design/issues/30584
+  it('should trigger onChange when have getCurrentAnchor', async () => {
+    const hash1 = getHashUrl();
+    const hash2 = getHashUrl();
+    const onChange = jest.fn();
+    const wrapper = mount<Anchor>(
+      <Anchor onChange={onChange} getCurrentAnchor={() => hash1}>
+        <Link href={`#${hash1}`} title={hash1} />
+        <Link href={`#${hash2}`} title={hash2} />
+      </Anchor>,
+    );
+    expect(onChange).toHaveBeenCalledTimes(1);
+    wrapper.instance().handleScrollTo(hash2);
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange).toHaveBeenCalledWith(hash2);
+  });
+
   it('invalid hash', async () => {
     const wrapper = mount<Anchor>(
       <Anchor>
@@ -384,7 +402,8 @@ describe('Anchor Render', () => {
       let start = 0;
 
       const handler = () => {
-        return (start += 1000);
+        start += 1000;
+        return start;
       };
 
       return jest.spyOn(Date, 'now').mockImplementation(handler);
@@ -432,7 +451,8 @@ describe('Anchor Render', () => {
       let start = 0;
 
       const handler = () => {
-        return (start += 1000);
+        start += 1000;
+        return start;
       };
 
       return jest.spyOn(Date, 'now').mockImplementation(handler);

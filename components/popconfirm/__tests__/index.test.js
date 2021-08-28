@@ -1,5 +1,6 @@
 import React from 'react';
 import { mount } from 'enzyme';
+import { spyElementPrototype } from 'rc-util/lib/test/domHook';
 import Popconfirm from '..';
 import mountTest from '../../../tests/shared/mountTest';
 import { sleep } from '../../../tests/utils';
@@ -12,6 +13,12 @@ describe('Popconfirm', () => {
   const eventObject = expect.objectContaining({
     target: expect.anything(),
     preventDefault: expect.any(Function),
+  });
+
+  beforeAll(() => {
+    spyElementPrototype(HTMLElement, 'offsetParent', {
+      get: () => ({}),
+    });
   });
 
   it('should popup Popconfirm dialog', () => {
@@ -175,5 +182,24 @@ describe('Popconfirm', () => {
     const triggerNode = popconfirm.find('span').at(0);
     triggerNode.simulate('click');
     expect(ref.current.getPopupDomNode()).toBeFalsy();
+  });
+
+  it('should be closed by pressing ESC', () => {
+    const onVisibleChange = jest.fn();
+    const wrapper = mount(
+      <Popconfirm
+        title="title"
+        mouseEnterDelay={0}
+        mouseLeaveDelay={0}
+        onVisibleChange={onVisibleChange}
+      >
+        <span>Delete</span>
+      </Popconfirm>,
+    );
+    const triggerNode = wrapper.find('span').at(0);
+    triggerNode.simulate('click');
+    expect(onVisibleChange).toHaveBeenLastCalledWith(true, undefined);
+    triggerNode.simulate('keydown', { key: 'Escape', keyCode: 27 });
+    expect(onVisibleChange).toHaveBeenLastCalledWith(false, eventObject);
   });
 });

@@ -2,8 +2,7 @@ import { Moment } from 'moment';
 import * as React from 'react';
 import DatePicker from '../date-picker';
 import { PickerTimeProps, RangePickerTimeProps } from '../date-picker/generatePicker';
-import warning from '../_util/warning';
-import { Omit } from '../_util/type';
+import devWarning from '../_util/devWarning';
 
 const { TimePicker: InternalTimePicker, RangePicker: InternalRangePicker } = DatePicker;
 
@@ -12,11 +11,19 @@ export interface TimePickerLocale {
   rangePlaceholder?: [string, string];
 }
 
-export interface TimeRangePickerProps extends RangePickerTimeProps<Moment> {}
+export interface TimeRangePickerProps extends Omit<RangePickerTimeProps<Moment>, 'picker'> {
+  popupClassName?: string;
+}
 
-const RangePicker = React.forwardRef<any, TimeRangePickerProps>((props, ref) => {
-  return <InternalRangePicker {...props} picker="time" mode={undefined} ref={ref} />;
-});
+const RangePicker = React.forwardRef<any, TimeRangePickerProps>((props, ref) => (
+  <InternalRangePicker
+    {...props}
+    dropdownClassName={props.popupClassName}
+    picker="time"
+    mode={undefined}
+    ref={ref}
+  />
+));
 
 export interface TimePickerProps extends Omit<PickerTimeProps<Moment>, 'picker'> {
   addon?: () => React.ReactNode;
@@ -30,7 +37,7 @@ const TimePicker = React.forwardRef<any, TimePickerProps>(
         return renderExtraFooter;
       }
       if (addon) {
-        warning(
+        devWarning(
           false,
           'TimePicker',
           '`addon` is deprecated. Please use `renderExtraFooter` instead.',
