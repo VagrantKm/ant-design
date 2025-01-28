@@ -1,5 +1,5 @@
 ---
-category: 全局样式
+group: 全局样式
 order: 6
 title: 阴影
 ---
@@ -20,7 +20,7 @@ title: 阴影
 <img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*li3zQbxRuOMAAAAAAAAAAABkARQnAQ" alt="高度">
 </div>
 
-**第 1 层**: 物体位于低层级，此时物体被操作(悬停、点击等)触发为悬浮状态，当操作完成或取消时，悬停状态反馈也跟随消失，物体回归到原有的层级中，如：卡片 hover 等；
+**第 1 层**: 物体位于低层级，此时物体被操作（悬停、点击等）触发为悬浮状态，当操作完成或取消时，悬停状态反馈也跟随消失，物体回归到原有的层级中，如：卡片 hover 等；
 
 <div>
 <img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*mXnoSI8MWuEAAAAAAAAAAABkARQnAQ" alt="高度">
@@ -52,14 +52,16 @@ title: 阴影
 
 1. 在不同高度上时，投射出的阴影颜色、模糊度、面积都有所区分。离地面越远的物体，产生的阴影颜色越淡、模糊度越高、面积越大；反之则颜色更深、模糊度越低、面积越小；
 
-2. 而投影的方向主要由光源与物体的相对位置决定。在 Ant Design 中不同的阴影方向使用在不同的地方：
+2. 而投影的方向主要由光源与物体的相对位置决定。
 
-- 阴影向下：主要应用在组件内部或组件本身，是比较常规场景的用法
-- 阴影向上：主要应用与底部导航或工具栏等
-- 阴影向左：主要应用与右边导航栏、抽屉组件或固定表格栏
-- 阴影向右：主要应用与左边导航栏、抽屉组件或固定表格栏
+在 Ant Design 中不同的阴影方向使用在不同的地方：
 
-阴影是模拟的真实世界的反馈，Ant Design 为了更符合真实阴影，在 4.0 中采用了三层阴影的表达方式，让阴影更柔和，更符合真实状态
+- 阴影向下：主要应用于组件内部或组件本身，是比较常规场景的用法
+- 阴影向上：主要应用于底部导航或工具栏等
+- 阴影向左：主要应用于右边导航栏、抽屉组件或固定表格栏
+- 阴影向右：主要应用于左边导航栏、抽屉组件或固定表格栏
+
+阴影是模拟的真实世界的反馈，Ant Design 为了更符合真实阴影，在 4.0 中采用了三层阴影的表达方式，让阴影更柔和，更符合真实状态。
 
 <div>
 <img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*1oijTJh2HEIAAAAAAAAAAABkARQnAQ" alt="阴影值">

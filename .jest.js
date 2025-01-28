@@ -1,35 +1,53 @@
+const compileModules = [
+  'react-sticky-box',
+  'rc-tween-one',
+  '@babel',
+  '@ant-design',
+  'countup.js',
+  '.pnpm',
+  '@asamuzakjp/css-color',
+];
+
+const ignoreList = [];
+
+// cnpm use `_` as prefix
+['', '_'].forEach((prefix) => {
+  compileModules.forEach((module) => {
+    ignoreList.push(`${prefix}${module}`);
+  });
+});
+
 const transformIgnorePatterns = [
-  '/dist/',
   // Ignore modules without es dir.
   // Update: @babel/runtime should also be transformed
-  'node_modules/(?!.*@(babel|ant-design))[^/]+?/(?!(es|node_modules)/)',
+  `[/\\\\]node_modules[/\\\\](?!${ignoreList.join('|')})[^/\\\\]+?[/\\\\](?!(es)[/\\\\])`,
 ];
 
 function getTestRegex(libDir) {
-  if (libDir === 'dist') {
-    return 'demo\\.test\\.js$';
+  if (['dist', 'lib', 'es', 'dist-min'].includes(libDir)) {
+    return 'demo\\.test\\.(j|t)sx?$';
   }
   return '.*\\.test\\.(j|t)sx?$';
 }
 
 module.exports = {
   verbose: true,
-  setupFiles: ['./tests/setup.js'],
+  testEnvironment: 'jsdom',
+  setupFiles: ['./tests/setup.ts', 'jest-canvas-mock'],
   setupFilesAfterEnv: ['./tests/setupAfterEnv.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'md'],
   modulePathIgnorePatterns: ['/_site/'],
   moduleNameMapper: {
-    '^dnd-core$': 'dnd-core/dist/cjs',
-    '^react-dnd$': 'react-dnd/dist/cjs',
-    '^react-dnd-html5-backend$': 'react-dnd-html5-backend/dist/cjs',
-    '^react-dnd-touch-backend$': 'react-dnd-touch-backend/dist/cjs',
-    '^react-dnd-test-backend$': 'react-dnd-test-backend/dist/cjs',
-    '^react-dnd-test-utils$': 'react-dnd-test-utils/dist/cjs',
+    '/\\.(css|less)$/': 'identity-obj-proxy',
+    '^antd$': '<rootDir>/components/index',
+    '^antd/es/(.*)$': '<rootDir>/components/$1',
+    '^antd/lib/(.*)$': '<rootDir>/components/$1',
+    '^antd/locale/(.*)$': '<rootDir>/components/locale/$1',
   },
-  testPathIgnorePatterns: ['/node_modules/', 'dekko', 'node'],
+  testPathIgnorePatterns: ['/node_modules/', 'dekko', 'node', 'image.test.js', 'image.test.ts'],
   transform: {
     '\\.tsx?$': './node_modules/@ant-design/tools/lib/jest/codePreprocessor',
-    '\\.js$': './node_modules/@ant-design/tools/lib/jest/codePreprocessor',
+    '\\.(m?)js$': './node_modules/@ant-design/tools/lib/jest/codePreprocessor',
     '\\.md$': './node_modules/@ant-design/tools/lib/jest/demoPreprocessor',
     '\\.(jpg|png|gif|svg)$': './node_modules/@ant-design/tools/lib/jest/imagePreprocessor',
   },
@@ -41,13 +59,20 @@ module.exports = {
     '!components/*/locale/index.tsx',
     '!components/*/__tests__/type.test.tsx',
     '!components/**/*/interface.{ts,tsx}',
+    '!components/*/__tests__/image.test.{ts,tsx}',
+    '!components/__tests__/node.test.tsx',
+    '!components/*/demo/*.tsx',
+    '!components/*/design/**',
   ],
   transformIgnorePatterns,
-  snapshotSerializers: ['enzyme-to-json/serializer'],
   globals: {
     'ts-jest': {
       tsConfig: './tsconfig.test.json',
     },
   },
-  testURL: 'http://localhost',
+  testEnvironmentOptions: {
+    url: 'http://localhost',
+  },
+  // bail: true,
+  maxWorkers: '50%',
 };

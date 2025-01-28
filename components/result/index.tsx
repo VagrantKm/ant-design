@@ -1,15 +1,15 @@
 import * as React from 'react';
-import classnames from 'classnames';
 import CheckCircleFilled from '@ant-design/icons/CheckCircleFilled';
 import CloseCircleFilled from '@ant-design/icons/CloseCircleFilled';
 import ExclamationCircleFilled from '@ant-design/icons/ExclamationCircleFilled';
 import WarningFilled from '@ant-design/icons/WarningFilled';
+import classNames from 'classnames';
 
-import { ConfigConsumerProps, ConfigConsumer } from '../config-provider';
-import warning from '../_util/warning';
-
+import { devUseWarning } from '../_util/warning';
+import { ConfigContext } from '../config-provider';
 import noFound from './noFound';
 import serverError from './serverError';
+import useStyle from './style';
 import unauthorized from './unauthorized';
 
 export const IconMap = {
@@ -36,27 +36,39 @@ export interface ResultProps {
   extra?: React.ReactNode;
   prefixCls?: string;
   className?: string;
+  rootClassName?: string;
   style?: React.CSSProperties;
+  children?: React.ReactNode;
 }
 
 // ExceptionImageMap keys
 const ExceptionStatus = Object.keys(ExceptionMap);
 
 /**
- * render icon
- * if ExceptionStatus includes ,render svg image
- * else render iconNode
+ * Render icon if ExceptionStatus includes ,render svg image else render iconNode
+ *
  * @param prefixCls
  * @param {status, icon}
  */
-const renderIcon = (prefixCls: string, { status, icon }: ResultProps) => {
-  const className = classnames(`${prefixCls}-icon`);
 
-  warning(
-    !(typeof icon === 'string' && icon.length > 2),
-    'Result',
-    `\`icon\` is using ReactNode instead of string naming in v4. Please check \`${icon}\` at https://ant.design/components/icon`,
-  );
+interface IconProps {
+  prefixCls: string;
+  icon: React.ReactNode;
+  status: ResultStatusType;
+}
+
+const Icon: React.FC<IconProps> = ({ prefixCls, icon, status }) => {
+  const className = classNames(`${prefixCls}-icon`);
+
+  if (process.env.NODE_ENV !== 'production') {
+    const warning = devUseWarning('Result');
+
+    warning(
+      !(typeof icon === 'string' && icon.length > 2),
+      'breaking',
+      `\`icon\` is using ReactNode instead of string naming in v4. Please check \`${icon}\` at https://ant.design/components/icon`,
+    );
+  }
 
   if (ExceptionStatus.includes(`${status}`)) {
     const SVGComponent = ExceptionMap[status as ExceptionStatusType];
@@ -71,53 +83,80 @@ const renderIcon = (prefixCls: string, { status, icon }: ResultProps) => {
     IconMap[status as Exclude<ResultStatusType, ExceptionStatusType>],
   );
 
+  if (icon === null || icon === false) {
+    return null;
+  }
+
   return <div className={className}>{icon || iconNode}</div>;
 };
 
-const renderExtra = (prefixCls: string, { extra }: ResultProps) =>
-  extra && <div className={`${prefixCls}-extra`}>{extra}</div>;
-
-export interface ResultType extends React.FC<ResultProps> {
-  PRESENTED_IMAGE_404: React.ReactNode;
-  PRESENTED_IMAGE_403: React.ReactNode;
-  PRESENTED_IMAGE_500: React.ReactNode;
+interface ExtraProps {
+  prefixCls: string;
+  extra: React.ReactNode;
 }
 
-const Result: ResultType = props => (
-  <ConfigConsumer>
-    {({ getPrefixCls, direction }: ConfigConsumerProps) => {
-      const {
-        prefixCls: customizePrefixCls,
-        className: customizeClassName,
-        subTitle,
-        title,
-        style,
-        children,
-        status,
-      } = props;
-      const prefixCls = getPrefixCls('result', customizePrefixCls);
-      const className = classnames(prefixCls, `${prefixCls}-${status}`, customizeClassName, {
-        [`${prefixCls}-rtl`]: direction === 'rtl',
-      });
-      return (
-        <div className={className} style={style}>
-          {renderIcon(prefixCls, props)}
-          <div className={`${prefixCls}-title`}>{title}</div>
-          {subTitle && <div className={`${prefixCls}-subtitle`}>{subTitle}</div>}
-          {children && <div className={`${prefixCls}-content`}>{children}</div>}
-          {renderExtra(prefixCls, props)}
-        </div>
-      );
-    }}
-  </ConfigConsumer>
-);
-
-Result.defaultProps = {
-  status: 'info',
+const Extra: React.FC<ExtraProps> = ({ prefixCls, extra }) => {
+  if (!extra) {
+    return null;
+  }
+  return <div className={`${prefixCls}-extra`}>{extra}</div>;
 };
 
-Result.PRESENTED_IMAGE_403 = ExceptionMap[403];
-Result.PRESENTED_IMAGE_404 = ExceptionMap[404];
-Result.PRESENTED_IMAGE_500 = ExceptionMap[500];
+export interface ResultType extends React.FC<ResultProps> {
+  PRESENTED_IMAGE_404: React.FC;
+  PRESENTED_IMAGE_403: React.FC;
+  PRESENTED_IMAGE_500: React.FC;
+}
+
+const Result: ResultType = ({
+  prefixCls: customizePrefixCls,
+  className: customizeClassName,
+  rootClassName,
+  subTitle,
+  title,
+  style,
+  children,
+  status = 'info',
+  icon,
+  extra,
+}) => {
+  const { getPrefixCls, direction, result } = React.useContext(ConfigContext);
+
+  const prefixCls = getPrefixCls('result', customizePrefixCls);
+
+  // Style
+  const [wrapCSSVar, hashId, cssVarCls] = useStyle(prefixCls);
+
+  const className = classNames(
+    prefixCls,
+    `${prefixCls}-${status}`,
+    customizeClassName,
+    result?.className,
+    rootClassName,
+    { [`${prefixCls}-rtl`]: direction === 'rtl' },
+    hashId,
+    cssVarCls,
+  );
+
+  const mergedStyle: React.CSSProperties = { ...result?.style, ...style };
+
+  return wrapCSSVar(
+    <div className={className} style={mergedStyle}>
+      <Icon prefixCls={prefixCls} status={status} icon={icon} />
+      <div className={`${prefixCls}-title`}>{title}</div>
+      {subTitle && <div className={`${prefixCls}-subtitle`}>{subTitle}</div>}
+      <Extra prefixCls={prefixCls} extra={extra} />
+      {children && <div className={`${prefixCls}-content`}>{children}</div>}
+    </div>,
+  );
+};
+
+Result.PRESENTED_IMAGE_403 = ExceptionMap['403'];
+Result.PRESENTED_IMAGE_404 = ExceptionMap['404'];
+Result.PRESENTED_IMAGE_500 = ExceptionMap['500'];
+
+if (process.env.NODE_ENV !== 'production') {
+  Result.displayName = 'Result';
+}
 
 export default Result;

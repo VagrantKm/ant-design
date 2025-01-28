@@ -1,58 +1,80 @@
-/**
- * TODO: 4.0
- * - remove `dataSource`
- * - `size` not work with customizeInput
- * - customizeInput not feedback `ENTER` key since accessibility enhancement
- */
-
 import * as React from 'react';
-import toArray from 'rc-util/lib/Children/toArray';
-import { SelectProps as RcSelectProps } from 'rc-select';
 import classNames from 'classnames';
-import omit from 'omit.js';
-import Select, { InternalSelectProps, OptionType } from '../select';
-import { ConfigConsumer, ConfigConsumerProps } from '../config-provider';
-import warning from '../_util/warning';
+import type { BaseSelectRef } from 'rc-select';
+import toArray from 'rc-util/lib/Children/toArray';
+import omit from 'rc-util/lib/omit';
+
+import { useZIndex } from '../_util/hooks/useZIndex';
+import genPurePanel from '../_util/PurePanel';
+import type { InputStatus } from '../_util/statusUtils';
+import { devUseWarning } from '../_util/warning';
+import type { ConfigConsumerProps } from '../config-provider';
+import { ConfigContext } from '../config-provider';
+import type {
+  BaseOptionType,
+  DefaultOptionType,
+  InternalSelectProps,
+  RefSelectProps,
+  SelectProps,
+} from '../select';
+import Select from '../select';
 
 const { Option } = Select;
-
-const InternalSelect = Select as React.ComponentClass<RcSelectProps>;
 
 export interface DataSourceItemObject {
   value: string;
   text: string;
 }
-export type DataSourceItemType = string | DataSourceItemObject;
+export type DataSourceItemType = DataSourceItemObject | React.ReactNode;
 
-export interface AutoCompleteProps
-  extends Omit<InternalSelectProps<string>, 'inputIcon' | 'loading' | 'mode' | 'optionLabelProp' | 'labelInValue'> {
+export interface AutoCompleteProps<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+> extends Omit<
+    InternalSelectProps<ValueType, OptionType>,
+    'loading' | 'mode' | 'optionLabelProp' | 'labelInValue'
+  > {
+  /** @deprecated Please use `options` instead */
   dataSource?: DataSourceItemType[];
+  status?: InputStatus;
+  popupClassName?: string;
+  /** @deprecated Please use `popupClassName` instead */
+  dropdownClassName?: string;
+  /** @deprecated Please use `popupMatchSelectWidth` instead */
+  dropdownMatchSelectWidth?: boolean | number;
+  popupMatchSelectWidth?: boolean | number;
 }
 
-function isSelectOptionOrSelectOptGroup(child: any): Boolean {
-  return child && child.type && (child.type.isSelectOption || child.type.isSelectOptGroup);
+function isSelectOptionOrSelectOptGroup(child: any): boolean {
+  return child?.type && (child.type.isSelectOption || child.type.isSelectOptGroup);
 }
 
-const AutoComplete: React.RefForwardingComponent<Select, AutoCompleteProps> = (props, ref) => {
-  const { prefixCls: customizePrefixCls, className, children, dataSource } = props;
+const AutoComplete: React.ForwardRefRenderFunction<RefSelectProps, AutoCompleteProps> = (
+  props,
+  ref,
+) => {
+  const {
+    prefixCls: customizePrefixCls,
+    className,
+    popupClassName,
+    dropdownClassName,
+    children,
+    dataSource,
+  } = props;
   const childNodes: React.ReactElement[] = toArray(children);
 
-  const selectRef = React.useRef<Select>();
-
-  React.useImperativeHandle<Select, Select>(ref, () => selectRef.current!);
-
   // ============================= Input =============================
-  let customizeInput: React.ReactElement;
+  let customizeInput: React.ReactElement | undefined;
 
   if (
     childNodes.length === 1 &&
     React.isValidElement(childNodes[0]) &&
     !isSelectOptionOrSelectOptGroup(childNodes[0])
   ) {
-    customizeInput = childNodes[0];
+    [customizeInput] = childNodes;
   }
 
-  const getInputElement = (): React.ReactElement => customizeInput;
+  const getInputElement = customizeInput ? (): React.ReactElement => customizeInput! : undefined;
 
   // ============================ Options ============================
   let optionChildren: React.ReactNode;
@@ -62,7 +84,7 @@ const AutoComplete: React.RefForwardingComponent<Select, AutoCompleteProps> = (p
     optionChildren = children;
   } else {
     optionChildren = dataSource
-      ? dataSource.map(item => {
+      ? dataSource.map((item) => {
           if (React.isValidElement(item)) {
             return item;
           }
@@ -82,55 +104,81 @@ const AutoComplete: React.RefForwardingComponent<Select, AutoCompleteProps> = (p
               );
             }
             default:
-              throw new Error('AutoComplete[dataSource] only supports type `string[] | Object[]`.');
+              return undefined;
           }
         })
       : [];
   }
 
-  // ============================ Warning ============================
-  React.useEffect(() => {
-    warning(
-      !('dataSource' in props),
-      'AutoComplete',
-      '`dataSource` is deprecated, please use `options` instead.',
-    );
+  if (process.env.NODE_ENV !== 'production') {
+    const warning = devUseWarning('AutoComplete');
+
+    warning.deprecated(!('dataSource' in props), 'dataSource', 'options');
 
     warning(
       !customizeInput || !('size' in props),
-      'AutoComplete',
+      'usage',
       'You need to control style self instead of setting `size` when using customize input.',
     );
-  }, []);
+
+    warning.deprecated(!dropdownClassName, 'dropdownClassName', 'popupClassName');
+  }
+
+  const { getPrefixCls } = React.useContext<ConfigConsumerProps>(ConfigContext);
+
+  const prefixCls = getPrefixCls('select', customizePrefixCls);
+
+  // ============================ zIndex ============================
+  const [zIndex] = useZIndex('SelectLike', props.dropdownStyle?.zIndex as number);
 
   return (
-    <ConfigConsumer>
-      {({ getPrefixCls }: ConfigConsumerProps) => {
-        const prefixCls = getPrefixCls('select', customizePrefixCls);
-
-        return (
-          <InternalSelect
-            ref={selectRef as any}
-            {...omit(props, ['dataSource'])}
-            prefixCls={prefixCls}
-            className={classNames(className, `${prefixCls}-auto-complete`)}
-            mode={Select.SECRET_COMBOBOX_MODE_DO_NOT_USE as any}
-            getInputElement={getInputElement}
-          >
-            {optionChildren}
-          </InternalSelect>
-        );
+    <Select
+      ref={ref}
+      suffixIcon={null}
+      {...omit(props, ['dataSource', 'dropdownClassName'])}
+      prefixCls={prefixCls}
+      popupClassName={popupClassName || dropdownClassName}
+      dropdownStyle={{
+        ...props.dropdownStyle,
+        zIndex,
       }}
-    </ConfigConsumer>
+      className={classNames(`${prefixCls}-auto-complete`, className)}
+      mode={Select.SECRET_COMBOBOX_MODE_DO_NOT_USE as SelectProps['mode']}
+      {...{
+        // Internal api
+        getInputElement,
+      }}
+    >
+      {optionChildren}
+    </Select>
   );
 };
 
-const RefAutoComplete = React.forwardRef<Select, AutoCompleteProps>(AutoComplete);
-
-type RefAutoComplete = typeof RefAutoComplete & {
-  Option: OptionType;
+const RefAutoComplete = React.forwardRef<RefSelectProps, AutoCompleteProps>(
+  AutoComplete,
+) as unknown as (<
+  ValueType = any,
+  OptionType extends BaseOptionType | DefaultOptionType = DefaultOptionType,
+>(
+  props: React.PropsWithChildren<AutoCompleteProps<ValueType, OptionType>> &
+    React.RefAttributes<BaseSelectRef>,
+) => React.ReactElement) & {
+  displayName?: string;
+  Option: typeof Option;
+  _InternalPanelDoNotUseOrYouWillBeFired: typeof PurePanel;
 };
 
-(RefAutoComplete as RefAutoComplete).Option = Option;
+// We don't care debug panel
+/* istanbul ignore next */
+const PurePanel = genPurePanel(RefAutoComplete, 'dropdownAlign', (props: any) =>
+  omit(props, ['visible']),
+);
 
-export default RefAutoComplete as RefAutoComplete;
+RefAutoComplete.Option = Option;
+RefAutoComplete._InternalPanelDoNotUseOrYouWillBeFired = PurePanel;
+
+if (process.env.NODE_ENV !== 'production') {
+  RefAutoComplete.displayName = 'AutoComplete';
+}
+
+export default RefAutoComplete;
