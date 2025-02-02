@@ -1,296 +1,257 @@
 import * as React from 'react';
-import RcDrawer from 'rc-drawer';
-import getScrollBarSize from 'rc-util/lib/getScrollBarSize';
-import CloseOutlined from '@ant-design/icons/CloseOutlined';
 import classNames from 'classnames';
-import omit from 'omit.js';
+import type { DrawerProps as RcDrawerProps } from 'rc-drawer';
+import RcDrawer from 'rc-drawer';
+import type { Placement } from 'rc-drawer/lib/Drawer';
+import type { CSSMotionProps } from 'rc-motion';
 
-import { ConfigConsumerProps } from '../config-provider';
-import { withConfigConsumer } from '../config-provider/context';
-import { tuple } from '../_util/type';
+import ContextIsolator from '../_util/ContextIsolator';
+import { useZIndex } from '../_util/hooks/useZIndex';
+import { getTransitionName } from '../_util/motion';
+import { devUseWarning } from '../_util/warning';
+import zIndexContext from '../_util/zindexContext';
+import { ConfigContext } from '../config-provider';
+import { usePanelRef } from '../watermark/context';
+import type { DrawerClassNames, DrawerPanelProps, DrawerStyles } from './DrawerPanel';
+import DrawerPanel from './DrawerPanel';
+import useStyle from './style';
 
-const DrawerContext = React.createContext<Drawer | null>(null);
+const _SizeTypes = ['default', 'large'] as const;
+type sizeType = (typeof _SizeTypes)[number];
 
-type EventType =
-  | React.KeyboardEvent<HTMLDivElement>
-  | React.MouseEvent<HTMLDivElement | HTMLButtonElement>;
+export interface PushState {
+  distance: string | number;
+}
 
-type getContainerFunc = () => HTMLElement;
+// Drawer diff props: 'open' | 'motion' | 'maskMotion' | 'wrapperClassName'
+export interface DrawerProps
+  extends Omit<RcDrawerProps, 'maskStyle'>,
+    Omit<DrawerPanelProps, 'prefixCls'> {
+  size?: sizeType;
 
-const PlacementTypes = tuple('top', 'right', 'bottom', 'left');
-type placementType = typeof PlacementTypes[number];
-export interface DrawerProps {
-  closable?: boolean;
-  destroyOnClose?: boolean;
-  forceRender?: boolean;
-  getContainer?: string | HTMLElement | getContainerFunc | false;
-  maskClosable?: boolean;
-  mask?: boolean;
-  maskStyle?: React.CSSProperties;
-  style?: React.CSSProperties;
-  /** wrapper dom node style of header and body */
-  drawerStyle?: React.CSSProperties;
-  headerStyle?: React.CSSProperties;
-  bodyStyle?: React.CSSProperties;
-  title?: React.ReactNode;
+  open?: boolean;
+
+  afterOpenChange?: (open: boolean) => void;
+
+  // Deprecated
+  /** @deprecated Please use `open` instead */
   visible?: boolean;
-  width?: number | string;
-  height?: number | string;
-  zIndex?: number;
-  prefixCls?: string;
-  push?: boolean;
-  placement?: placementType;
-  onClose?: (e: EventType) => void;
-  afterVisibleChange?: (visible: boolean) => void;
-  className?: string;
-  handler?: React.ReactNode;
-  keyboard?: boolean;
-  footer?: React.ReactNode;
-  footerStyle?: React.CSSProperties;
+  /** @deprecated Please use `afterOpenChange` instead */
+  afterVisibleChange?: (open: boolean) => void;
+  classNames?: DrawerClassNames;
+  styles?: DrawerStyles;
 }
 
-export interface IDrawerState {
-  push?: boolean;
-}
+const defaultPushState: PushState = { distance: 180 };
 
-class Drawer extends React.Component<DrawerProps & ConfigConsumerProps, IDrawerState> {
-  static defaultProps = {
-    width: 256,
-    height: 256,
-    closable: true,
-    placement: 'right' as placementType,
-    maskClosable: true,
-    mask: true,
-    level: null,
-    keyboard: true,
-  };
+const Drawer: React.FC<DrawerProps> & {
+  _InternalPanelDoNotUseOrYouWillBeFired: typeof PurePanel;
+} = (props) => {
+  const {
+    rootClassName,
+    width,
+    height,
+    size = 'default',
+    mask = true,
+    push = defaultPushState,
+    open,
+    afterOpenChange,
+    onClose,
+    prefixCls: customizePrefixCls,
+    getContainer: customizeGetContainer,
+    style,
+    className,
 
-  readonly state = {
-    push: false,
-  };
+    // Deprecated
+    visible,
+    afterVisibleChange,
+    maskStyle,
+    drawerStyle,
+    contentWrapperStyle,
 
-  parentDrawer: Drawer | null;
+    ...rest
+  } = props;
 
-  destroyClose: boolean;
+  const { getPopupContainer, getPrefixCls, direction, drawer } = React.useContext(ConfigContext);
 
-  public componentDidMount() {
-    // fix: delete drawer in child and re-render, no push started.
-    // <Drawer>{show && <Drawer />}</Drawer>
-    const { visible } = this.props;
-    if (visible && this.parentDrawer) {
-      this.parentDrawer.push();
-    }
-  }
+  const prefixCls = getPrefixCls('drawer', customizePrefixCls);
 
-  public componentDidUpdate(preProps: DrawerProps) {
-    const { visible } = this.props;
-    if (preProps.visible !== visible && this.parentDrawer) {
-      if (visible) {
-        this.parentDrawer.push();
-      } else {
-        this.parentDrawer.pull();
-      }
-    }
-  }
+  const [wrapCSSVar, hashId, cssVarCls] = useStyle(prefixCls);
 
-  public componentWillUnmount() {
-    // unmount drawer in child, clear push.
-    if (this.parentDrawer) {
-      this.parentDrawer.pull();
-      this.parentDrawer = null;
-    }
-  }
+  const getContainer =
+    // 有可能为 false，所以不能直接判断
+    customizeGetContainer === undefined && getPopupContainer
+      ? () => getPopupContainer(document.body)
+      : customizeGetContainer;
 
-  push = () => {
-    this.setState({
-      push: true,
-    });
-  };
-
-  pull = () => {
-    this.setState({
-      push: false,
-    });
-  };
-
-  onDestroyTransitionEnd = () => {
-    const isDestroyOnClose = this.getDestroyOnClose();
-    if (!isDestroyOnClose) {
-      return;
-    }
-    if (!this.props.visible) {
-      this.destroyClose = true;
-      this.forceUpdate();
-    }
-  };
-
-  getDestroyOnClose = () => this.props.destroyOnClose && !this.props.visible;
-
-  // get drawer push width or height
-  getPushTransform = (placement?: placementType) => {
-    if (placement === 'left' || placement === 'right') {
-      return `translateX(${placement === 'left' ? 180 : -180}px)`;
-    }
-    if (placement === 'top' || placement === 'bottom') {
-      return `translateY(${placement === 'top' ? 180 : -180}px)`;
-    }
-  };
-
-  getRcDrawerStyle = () => {
-    const { zIndex, placement, style } = this.props;
-    const { push } = this.state;
-    return {
-      zIndex,
-      transform: push ? this.getPushTransform(placement) : undefined,
-      ...style,
-    };
-  };
-
-  renderHeader() {
-    const { title, prefixCls, closable, headerStyle } = this.props;
-    if (!title && !closable) {
-      return null;
-    }
-
-    const headerClassName = title ? `${prefixCls}-header` : `${prefixCls}-header-no-title`;
-    return (
-      <div className={headerClassName} style={headerStyle}>
-        {title && <div className={`${prefixCls}-title`}>{title}</div>}
-        {closable && this.renderCloseIcon()}
-      </div>
-    );
-  }
-
-  renderFooter() {
-    const { footer, footerStyle, prefixCls } = this.props;
-    if (!footer) {
-      return null;
-    }
-
-    const footerClassName = `${prefixCls}-footer`;
-    return (
-      <div className={footerClassName} style={footerStyle}>
-        {footer}
-      </div>
-    );
-  }
-
-  renderCloseIcon() {
-    const { closable, prefixCls, onClose } = this.props;
-    return (
-      closable && (
-        // eslint-disable-next-line react/button-has-type
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className={`${prefixCls}-close`}
-          style={
-            {
-              '--scroll-bar': `${getScrollBarSize()}px`,
-            } as any
-          }
-        >
-          <CloseOutlined />
-        </button>
-      )
-    );
-  }
-
-  // render drawer body dom
-  renderBody = () => {
-    const { bodyStyle, drawerStyle, prefixCls, visible } = this.props;
-    if (this.destroyClose && !visible) {
-      return null;
-    }
-    this.destroyClose = false;
-
-    const containerStyle: React.CSSProperties = {};
-
-    const isDestroyOnClose = this.getDestroyOnClose();
-
-    if (isDestroyOnClose) {
-      // Increase the opacity transition, delete children after closing.
-      containerStyle.opacity = 0;
-      containerStyle.transition = 'opacity .3s';
-    }
-
-    return (
-      <div
-        className={`${prefixCls}-wrapper-body`}
-        style={{
-          ...containerStyle,
-          ...drawerStyle,
-        }}
-        onTransitionEnd={this.onDestroyTransitionEnd}
-      >
-        {this.renderHeader()}
-        <div className={`${prefixCls}-body`} style={bodyStyle}>
-          {this.props.children}
-        </div>
-        {this.renderFooter()}
-      </div>
-    );
-  };
-
-  // render Provider for Multi-level drawer
-  renderProvider = (value: Drawer) => {
-    const { prefixCls, placement, className, width, height, mask, direction, ...rest } = this.props;
-    const haveMask = mask ? '' : 'no-mask';
-    this.parentDrawer = value;
-    const offsetStyle: any = {};
-    if (placement === 'left' || placement === 'right') {
-      offsetStyle.width = width;
-    } else {
-      offsetStyle.height = height;
-    }
-    const drawerClassName = classNames(className, haveMask, {
+  const drawerClassName = classNames(
+    {
+      'no-mask': !mask,
       [`${prefixCls}-rtl`]: direction === 'rtl',
+    },
+    rootClassName,
+    hashId,
+    cssVarCls,
+  );
+
+  // ========================== Warning ===========================
+  if (process.env.NODE_ENV !== 'production') {
+    const warning = devUseWarning('Drawer');
+
+    [
+      ['visible', 'open'],
+      ['afterVisibleChange', 'afterOpenChange'],
+      ['headerStyle', 'styles.header'],
+      ['bodyStyle', 'styles.body'],
+      ['footerStyle', 'styles.footer'],
+      ['contentWrapperStyle', 'styles.wrapper'],
+      ['maskStyle', 'styles.mask'],
+      ['drawerStyle', 'styles.content'],
+    ].forEach(([deprecatedName, newName]) => {
+      warning.deprecated(!(deprecatedName in props), deprecatedName, newName);
     });
-    return (
-      <DrawerContext.Provider value={this}>
-        <RcDrawer
-          handler={false}
-          {...omit(rest, [
-            'zIndex',
-            'style',
-            'closable',
-            'destroyOnClose',
-            'drawerStyle',
-            'headerStyle',
-            'bodyStyle',
-            'footerStyle',
-            'footer',
-            'locale',
-            'title',
-            'push',
-            'visible',
-            'getPopupContainer',
-            'rootPrefixCls',
-            'getPrefixCls',
-            'renderEmpty',
-            'csp',
-            'pageHeader',
-            'autoInsertSpaceInButton',
-          ])}
-          {...offsetStyle}
-          prefixCls={prefixCls}
-          open={this.props.visible}
-          showMask={mask}
-          placement={placement}
-          style={this.getRcDrawerStyle()}
-          className={drawerClassName}
-        >
-          {this.renderBody()}
-        </RcDrawer>
-      </DrawerContext.Provider>
-    );
+
+    if (getContainer !== undefined && props.style?.position === 'absolute') {
+      warning(
+        false,
+        'breaking',
+        '`style` is replaced by `rootStyle` in v5. Please check that `position: absolute` is necessary.',
+      );
+    }
+  }
+
+  // ============================ Size ============================
+  const mergedWidth = React.useMemo<string | number>(
+    () => width ?? (size === 'large' ? 736 : 378),
+    [width, size],
+  );
+
+  const mergedHeight = React.useMemo<string | number>(
+    () => height ?? (size === 'large' ? 736 : 378),
+    [height, size],
+  );
+
+  // =========================== Motion ===========================
+  const maskMotion: CSSMotionProps = {
+    motionName: getTransitionName(prefixCls, 'mask-motion'),
+    motionAppear: true,
+    motionEnter: true,
+    motionLeave: true,
+    motionDeadline: 500,
   };
 
-  render() {
-    return <DrawerContext.Consumer>{this.renderProvider}</DrawerContext.Consumer>;
-  }
+  const panelMotion: RcDrawerProps['motion'] = (motionPlacement) => ({
+    motionName: getTransitionName(prefixCls, `panel-motion-${motionPlacement}`),
+    motionAppear: true,
+    motionEnter: true,
+    motionLeave: true,
+    motionDeadline: 500,
+  });
+
+  // ============================ Refs ============================
+  // Select `ant-drawer-content` by `panelRef`
+  const panelRef = usePanelRef();
+
+  // ============================ zIndex ============================
+  const [zIndex, contextZIndex] = useZIndex('Drawer', rest.zIndex);
+
+  // =========================== Render ===========================
+  const { classNames: propClassNames = {}, styles: propStyles = {} } = rest;
+  const { classNames: contextClassNames = {}, styles: contextStyles = {} } = drawer || {};
+
+  return wrapCSSVar(
+    <ContextIsolator form space>
+      <zIndexContext.Provider value={contextZIndex}>
+        <RcDrawer
+          prefixCls={prefixCls}
+          onClose={onClose}
+          maskMotion={maskMotion}
+          motion={panelMotion}
+          {...rest}
+          classNames={{
+            mask: classNames(propClassNames.mask, contextClassNames.mask),
+            content: classNames(propClassNames.content, contextClassNames.content),
+            wrapper: classNames(propClassNames.wrapper, contextClassNames.wrapper),
+          }}
+          styles={{
+            mask: {
+              ...propStyles.mask,
+              ...maskStyle,
+              ...contextStyles.mask,
+            },
+            content: {
+              ...propStyles.content,
+              ...drawerStyle,
+              ...contextStyles.content,
+            },
+            wrapper: {
+              ...propStyles.wrapper,
+              ...contentWrapperStyle,
+              ...contextStyles.wrapper,
+            },
+          }}
+          open={open ?? visible}
+          mask={mask}
+          push={push}
+          width={mergedWidth}
+          height={mergedHeight}
+          style={{ ...drawer?.style, ...style }}
+          className={classNames(drawer?.className, className)}
+          rootClassName={drawerClassName}
+          getContainer={getContainer}
+          afterOpenChange={afterOpenChange ?? afterVisibleChange}
+          panelRef={panelRef}
+          zIndex={zIndex}
+        >
+          <DrawerPanel prefixCls={prefixCls} {...rest} onClose={onClose} />
+        </RcDrawer>
+      </zIndexContext.Provider>
+    </ContextIsolator>,
+  );
+};
+
+interface PurePanelInterface {
+  prefixCls?: string;
+  style?: React.CSSProperties;
+  className?: string;
+  placement?: Placement;
 }
 
-export default withConfigConsumer<DrawerProps>({
-  prefixCls: 'drawer',
-})(Drawer);
+/** @private Internal Component. Do not use in your production. */
+const PurePanel: React.FC<Omit<DrawerPanelProps, 'prefixCls'> & PurePanelInterface> = (props) => {
+  const {
+    prefixCls: customizePrefixCls,
+    style,
+    className,
+    placement = 'right',
+    ...restProps
+  } = props;
+  const { getPrefixCls } = React.useContext(ConfigContext);
+
+  const prefixCls = getPrefixCls('drawer', customizePrefixCls);
+
+  const [wrapCSSVar, hashId, cssVarCls] = useStyle(prefixCls);
+
+  const cls = classNames(
+    prefixCls,
+    `${prefixCls}-pure`,
+    `${prefixCls}-${placement}`,
+    hashId,
+    cssVarCls,
+    className,
+  );
+
+  return wrapCSSVar(
+    <div className={cls} style={style}>
+      <DrawerPanel prefixCls={prefixCls} {...restProps} />
+    </div>,
+  );
+};
+
+Drawer._InternalPanelDoNotUseOrYouWillBeFired = PurePanel;
+
+if (process.env.NODE_ENV !== 'production') {
+  Drawer.displayName = 'Drawer';
+}
+
+export default Drawer;

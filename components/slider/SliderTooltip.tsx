@@ -1,41 +1,51 @@
 import * as React from 'react';
-import Tooltip, { TooltipProps } from '../tooltip';
+import { useRef } from 'react';
+import type { SliderRef } from 'rc-slider/lib/Slider';
+import raf from 'rc-util/lib/raf';
+import { composeRef } from 'rc-util/lib/ref';
 
-export default function SliderTooltip(props: TooltipProps) {
-  const { visible } = props;
-  const tooltipRef = React.useRef<Tooltip>(null);
+import type { TooltipProps } from '../tooltip';
+import Tooltip from '../tooltip';
 
-  const rafRef = React.useRef<number | null>(null);
+export type SliderTooltipProps = TooltipProps & {
+  draggingDelete?: boolean;
+};
+
+const SliderTooltip = React.forwardRef<SliderRef, SliderTooltipProps>((props, ref) => {
+  const { open, draggingDelete } = props;
+  const innerRef = useRef<any>(null);
+
+  const mergedOpen = open && !draggingDelete;
+
+  const rafRef = useRef<number | null>(null);
 
   function cancelKeepAlign() {
-    window.cancelAnimationFrame(rafRef.current!);
+    raf.cancel(rafRef.current!);
     rafRef.current = null;
   }
 
   function keepAlign() {
-    if (rafRef.current !== null) {
-      return;
-    }
-
-    rafRef.current = window.requestAnimationFrame(() => {
-      if (tooltipRef.current && (tooltipRef.current as any).tooltip) {
-        (tooltipRef.current as any).tooltip.forcePopupAlign();
-      }
-
+    rafRef.current = raf(() => {
+      innerRef.current?.forceAlign();
       rafRef.current = null;
-      keepAlign();
     });
   }
 
   React.useEffect(() => {
-    if (visible) {
+    if (mergedOpen) {
       keepAlign();
     } else {
       cancelKeepAlign();
     }
 
     return cancelKeepAlign;
-  }, [visible]);
+  }, [mergedOpen, props.title]);
 
-  return <Tooltip ref={tooltipRef} {...props} />;
+  return <Tooltip ref={composeRef(innerRef, ref)} {...props} open={mergedOpen} />;
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  SliderTooltip.displayName = 'SliderTooltip';
 }
+
+export default SliderTooltip;

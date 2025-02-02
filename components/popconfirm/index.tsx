@@ -1,141 +1,152 @@
 import * as React from 'react';
 import ExclamationCircleFilled from '@ant-design/icons/ExclamationCircleFilled';
-import Tooltip, { AbstractTooltipProps } from '../tooltip';
-import Button from '../button';
-import { LegacyButtonType, NativeButtonProps, convertLegacyProps } from '../button/button';
-import LocaleReceiver from '../locale-provider/LocaleReceiver';
-import defaultLocale from '../locale/default';
+import classNames from 'classnames';
+import useMergedState from 'rc-util/lib/hooks/useMergedState';
+import omit from 'rc-util/lib/omit';
+
+import type { RenderFunction } from '../_util/getRenderPropValue';
+import type { ButtonProps, LegacyButtonType } from '../button/button';
 import { ConfigContext } from '../config-provider';
-import { getRenderPropValue, RenderFunction } from '../_util/getRenderPropValue';
+import type { PopoverProps } from '../popover';
+import Popover from '../popover';
+import type { AbstractTooltipProps, TooltipRef } from '../tooltip';
+import PurePanel, { Overlay } from './PurePanel';
+import useStyle from './style';
 
 export interface PopconfirmProps extends AbstractTooltipProps {
   title: React.ReactNode | RenderFunction;
+  description?: React.ReactNode | RenderFunction;
   disabled?: boolean;
   onConfirm?: (e?: React.MouseEvent<HTMLElement>) => void;
   onCancel?: (e?: React.MouseEvent<HTMLElement>) => void;
   okText?: React.ReactNode;
   okType?: LegacyButtonType;
   cancelText?: React.ReactNode;
-  okButtonProps?: NativeButtonProps;
-  cancelButtonProps?: NativeButtonProps;
+  okButtonProps?: ButtonProps;
+  cancelButtonProps?: ButtonProps;
+  showCancel?: boolean;
   icon?: React.ReactNode;
-  onVisibleChange?: (visible: boolean, e?: React.MouseEvent<HTMLElement>) => void;
+  onOpenChange?: (
+    open: boolean,
+    e?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLDivElement>,
+  ) => void;
+  onPopupClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 export interface PopconfirmState {
-  visible?: boolean;
+  open?: boolean;
 }
 
-export interface PopconfirmLocale {
-  okText: string;
-  cancelText: string;
-}
+const InternalPopconfirm = React.forwardRef<TooltipRef, PopconfirmProps>((props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    placement = 'top',
+    trigger = 'click',
+    okType = 'primary',
+    icon = <ExclamationCircleFilled />,
+    children,
+    overlayClassName,
+    onOpenChange,
+    onVisibleChange,
+    overlayStyle,
+    styles,
+    classNames: popconfirmClassNames,
+    ...restProps
+  } = props;
 
-const Popconfirm = React.forwardRef<unknown, PopconfirmProps>((props, ref) => {
-  const [visible, setVisible] = React.useState(props.visible);
+  const { getPrefixCls, popconfirm } = React.useContext(ConfigContext);
+  const [open, setOpen] = useMergedState(false, {
+    value: props.open ?? props.visible,
+    defaultValue: props.defaultOpen ?? props.defaultVisible,
+  });
 
-  React.useEffect(() => {
-    if ('visible' in props) {
-      setVisible(props.visible);
-    }
-  }, [props.visible]);
-
-  React.useEffect(() => {
-    if ('defaultVisible' in props) {
-      setVisible(props.defaultVisible);
-    }
-  }, [props.defaultVisible]);
-
-  const settingVisible = (value: boolean, e?: React.MouseEvent<HTMLButtonElement>) => {
-    if (!('visible' in props)) {
-      setVisible(value);
-    }
-
-    if (props.onVisibleChange) {
-      props.onVisibleChange(value, e);
-    }
+  const settingOpen: PopoverProps['onOpenChange'] = (value, e) => {
+    setOpen(value, true);
+    onVisibleChange?.(value);
+    onOpenChange?.(value, e);
   };
 
-  const onConfirm = (e: React.MouseEvent<HTMLButtonElement>) => {
-    settingVisible(false, e);
-
-    if (props.onConfirm) {
-      props.onConfirm.call(this, e);
-    }
+  const close = (e: React.MouseEvent<HTMLButtonElement>) => {
+    settingOpen(false, e);
   };
+
+  const onConfirm = (e: React.MouseEvent<HTMLButtonElement>) => props.onConfirm?.call(this, e);
 
   const onCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
-    settingVisible(false, e);
-
-    if (props.onCancel) {
-      props.onCancel.call(this, e);
-    }
+    settingOpen(false, e);
+    props.onCancel?.call(this, e);
   };
 
-  const onVisibleChange = (value: boolean) => {
-    const { disabled } = props;
+  const onInternalOpenChange: PopoverProps['onOpenChange'] = (value, e) => {
+    const { disabled = false } = props;
     if (disabled) {
       return;
     }
-    settingVisible(value);
+    settingOpen(value, e);
   };
 
-  const renderOverlay = (prefixCls: string, popconfirmLocale: PopconfirmLocale) => {
-    const { okButtonProps, cancelButtonProps, title, cancelText, okText, okType, icon } = props;
-    return (
-      <div className={`${prefixCls}-inner-content`}>
-        <div className={`${prefixCls}-message`}>
-          {icon}
-          <div className={`${prefixCls}-message-title`}>{getRenderPropValue(title)}</div>
-        </div>
-        <div className={`${prefixCls}-buttons`}>
-          <Button onClick={onCancel} size="small" {...cancelButtonProps}>
-            {cancelText || popconfirmLocale.cancelText}
-          </Button>
-          <Button
-            onClick={onConfirm}
-            {...convertLegacyProps(okType)}
-            size="small"
-            {...okButtonProps}
-          >
-            {okText || popconfirmLocale.okText}
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const { getPrefixCls } = React.useContext(ConfigContext);
-
-  const { prefixCls: customizePrefixCls, placement, ...restProps } = props;
-  const prefixCls = getPrefixCls('popover', customizePrefixCls);
-
-  const overlay = (
-    <LocaleReceiver componentName="Popconfirm" defaultLocale={defaultLocale.Popconfirm}>
-      {(popconfirmLocale: PopconfirmLocale) => renderOverlay(prefixCls, popconfirmLocale)}
-    </LocaleReceiver>
+  const prefixCls = getPrefixCls('popconfirm', customizePrefixCls);
+  const rootClassNames = classNames(
+    prefixCls,
+    overlayClassName,
+    popconfirm?.classNames?.root,
+    popconfirmClassNames?.root,
   );
+  const bodyClassNames = classNames(popconfirm?.classNames?.body, popconfirmClassNames?.body);
 
-  return (
-    <Tooltip
-      {...restProps}
-      prefixCls={prefixCls}
+  const [wrapCSSVar] = useStyle(prefixCls);
+
+  return wrapCSSVar(
+    <Popover
+      {...omit(restProps, ['title'])}
+      trigger={trigger}
       placement={placement}
-      onVisibleChange={onVisibleChange}
-      visible={visible}
-      overlay={overlay}
-      ref={ref as any}
-    />
+      onOpenChange={onInternalOpenChange}
+      open={open}
+      ref={ref}
+      classNames={{ root: rootClassNames, body: bodyClassNames }}
+      styles={{
+        root: {
+          ...popconfirm?.styles?.root,
+          ...popconfirm?.style,
+          ...overlayStyle,
+          ...styles?.root,
+        },
+        body: {
+          ...popconfirm?.styles?.body,
+          ...styles?.body,
+        },
+      }}
+      content={
+        <Overlay
+          okType={okType}
+          icon={icon}
+          {...props}
+          prefixCls={prefixCls}
+          close={close}
+          onConfirm={onConfirm}
+          onCancel={onCancel}
+        />
+      }
+      data-popover-inject
+    >
+      {children}
+    </Popover>,
   );
 });
 
-Popconfirm.defaultProps = {
-  transitionName: 'zoom-big',
-  placement: 'top' as PopconfirmProps['placement'],
-  trigger: 'click' as PopconfirmProps['trigger'],
-  okType: 'primary' as PopconfirmProps['okType'],
-  icon: <ExclamationCircleFilled />,
-  disabled: false,
+type CompoundedComponent = typeof InternalPopconfirm & {
+  _InternalPanelDoNotUseOrYouWillBeFired: typeof PurePanel;
 };
+
+const Popconfirm = InternalPopconfirm as CompoundedComponent;
+
+// We don't care debug panel
+/* istanbul ignore next */
+Popconfirm._InternalPanelDoNotUseOrYouWillBeFired = PurePanel;
+
+if (process.env.NODE_ENV !== 'production') {
+  Popconfirm.displayName = 'Popconfirm';
+}
 
 export default Popconfirm;

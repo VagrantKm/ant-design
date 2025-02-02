@@ -1,5 +1,5 @@
 ---
-category: 设计模式 - 探索
+group: 设计模式 - 探索
 type: 模板文档
 order: 3
 title: 列表页
@@ -11,7 +11,7 @@ title: 列表页
 
 ## 设计目标
 
-帮助用户更高效的查看、处理、查找条目。
+帮助用户更高效地查看、处理、查找条目。
 
 ## 设计原则
 
@@ -38,61 +38,75 @@ title: 列表页
 
 #### 单列布局
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*c0iNQIBusPMAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*c0iNQIBusPMAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
-从上往下堆叠，数据过滤模块在最上方，过滤数据后，用户再由总体到具体的的浏览逻辑理解和分析。
+从上往下堆叠，数据过滤模块在最上方，过滤数据后，用户再由总体到具体的浏览逻辑理解和分析。
 
 #### 双栏布局
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*h8MsSr8UXCEAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*h8MsSr8UXCEAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
 将数据过滤模块放置在侧栏，当过滤条件过多，横向空间充裕时使用。
 
 #### [模版 - 查询表格](https://preview.pro.ant.design/list/table-list)
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*uAGRTY5EMvIAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*uAGRTY5EMvIAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
 **什么时候使用**
 
-每条条目需要都需要露出很多字段；用户在搜寻条目时有准确的查询范围时使用。
+每个条目都需要露出很多字段；用户在搜寻条目时有准确的查询范围时使用。
 
 #### 模版 - 标准列表
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*3KMbRrbjvzkAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*3KMbRrbjvzkAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
-**什么时候使用** 
+**什么时候使用**
 
-提供每条条目的概览信息，点击列表可导航至条目详情。页面内常提供统计功能，供用户了解总体进展。可作为简易版的工作台使用。
+提供每个条目的概览信息，点击列表可导航至条目详情。页面内常提供统计功能，供用户了解总体进展。可作为简易版的工作台使用。
 
 #### [模板 - 卡片列表](https://preview.pro.ant.design/list/card-list)
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*coEVT7uElCUAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*coEVT7uElCUAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
-**什么时候使用** 
+**什么时候使用**
 
 用户无需以特定顺序浏览条目，将每个条目以富有吸引力的方式呈现。
 
 #### 模版 - 搜索列表
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*yW4QQKNi_0QAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*yW4QQKNi_0QAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
-**什么时候使用** 
+**什么时候使用**
 
 以搜索为主寻找特定条目信息，通过关键词一次性在众多主题下的条目中搜寻结果。可对大量不同种类的内容进行搜索和筛选，满足对模糊目标的查找需求。
 
-**涉及哪些操作** 
+**涉及哪些操作**
 
 筛选、搜索
 
 #### 模版 - 成员管理
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*aJxDR6oP19gAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*aJxDR6oP19gAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
-**什么时候使用** 
+**什么时候使用**
 
 成员管理是用于展示和管理某对象中所包含的成员的基本信息和权限信息的页面，管理操作通常包括添加成员、删除成员、成员角色与权限赋予等。
 
-**涉及哪些操作** 
+**涉及哪些操作**
 
 筛选、删除等
 
@@ -100,7 +114,9 @@ title: 列表页
 
 #### 批量操作
 
-<img class="preview-img no-padding" align="right" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*NvPKR5HZQ9MAAAAAAAAAAABkARQnAQ">
+<ImagePreview>
+<img class="preview-img no-padding" src="https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*NvPKR5HZQ9MAAAAAAAAAAABkARQnAQ">
+</ImagePreview>
 
 页级的批量操作影响整个页面，可布置于页底。
 

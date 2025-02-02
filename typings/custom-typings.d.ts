@@ -8,57 +8,11 @@ declare module '*.svg' {
   export default src;
 }
 
-declare module 'bisheng/collect';
-
-declare module 'bisheng/router';
-
-declare module 'react-github-button';
-
-declare module 'jsonml.js/*';
-
-declare module 'rc-pagination/*';
-
-declare module 'omit.js';
-
-declare module 'rc-animate*';
-
 declare module 'rc-util*';
 
-declare module '@ant-design/css-animation*';
+declare module 'jsonml-to-react-element';
 
-declare module 'rc-checkbox';
-
-declare module 'rc-radio';
-
-declare module 'rc-editor-mention';
-
-declare module 'rc-tabs*';
-
-declare module 'rc-tree/lib/util';
-
-declare module 'rc-input-number';
-
-declare module 'rc-collapse';
-
-declare module 'rc-dialog';
-
-declare module 'rc-rate';
-
-declare module 'rc-queue-anim';
-
-declare module 'rc-slider';
-
-declare module 'rc-slider/lib/Slider';
-
-declare module 'rc-slider/lib/Range';
-
-declare module 'rc-slider/lib/Handle';
-
-declare module 'rc-steps';
-
-declare module 'rc-switch';
-
-declare module 'rc-upload';
+declare module 'jsonml.js/*';
 
 declare module '*.json' {
   const value: any;
@@ -66,4 +20,12 @@ declare module '*.json' {
   export default value;
 }
 
-declare module 'react-copy-to-clipboard';
+declare module '@npmcli/run-script' {
+  export default function runScript(options: {
+    [key: string]: string | string[] | boolean | NodeJS.ProcessEnv;
+  }): Promise<void>;
+}
+
+declare module '@microflash/rehype-figure';
+
+declare module 'dekko';

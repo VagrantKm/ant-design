@@ -1,40 +1,61 @@
 ---
 category: Components
-type: Data Display
+group: Data Display
 title: Statistic
+description: Display statistic number.
+cover: https://mdn.alipayobjects.com/huamei_7uahnr/afts/img/A*YL7PRYNtH-4AAAAAAAAAAAAADrJ8AQ/original
+coverDark: https://mdn.alipayobjects.com/huamei_7uahnr/afts/img/A*BPWDRbSYxJ4AAAAAAAAAAAAADrJ8AQ/original
+demo:
+  cols: 2
 ---
-
-Display statistic number.
 
 ## When To Use
 
 - When want to highlight some data.
 - When want to display statistic data with description.
 
+## Examples
+
+<!-- prettier-ignore -->
+<code src="./demo/basic.tsx">Basic</code>
+<code src="./demo/unit.tsx">Unit</code>
+<code src="./demo/animated.tsx">Animated number</code>
+<code src="./demo/card.tsx" background="grey">In Card</code>
+<code src="./demo/countdown.tsx">Countdown</code>
+<code src="./demo/component-token.tsx" debug>Component Token</code>
+
 ## API
+
+Common props ref：[Common props](/docs/react/common-props)
 
 #### Statistic
 
 | Property         | Description                   | Type                 | Default | Version |
 | ---------------- | ----------------------------- | -------------------- | ------- | ------- |
-| decimalSeparator | decimal separator             | string               | .       |         |
-| formatter        | customize value display logic | (value) => ReactNode | -       |         |
-| groupSeparator   | group separator               | string               | ,       |         |
-| precision        | precision of input value      | number               | -       |         |
-| prefix           | prefix node of value          | string \| ReactNode  | -       |         |
-| suffix           | suffix node of value          | string \| ReactNode  | -       |         |
-| title            | Display title                 | string \| ReactNode  | -       |         |
+| decimalSeparator | The decimal separator         | string               | `.`     |         |
+| formatter        | Customize value display logic | (value) => ReactNode | -       |         |
+| groupSeparator   | Group separator               | string               | `,`     |         |
+| loading          | Loading status of Statistic   | boolean              | false   | 4.8.0   |
+| precision        | The precision of input value  | number               | -       |         |
+| prefix           | The prefix node of value      | ReactNode            | -       |         |
+| suffix           | The suffix node of value      | ReactNode            | -       |         |
+| title            | Display title                 | ReactNode            | -       |         |
 | value            | Display value                 | string \| number     | -       |         |
-| valueStyle       | Set value css style           | CSSProperties        | -       |         |
+| valueStyle       | Set value section style       | CSSProperties        | -       |         |
 
 #### Statistic.Countdown
 
 | Property | Description | Type | Default | Version |
 | --- | --- | --- | --- | --- |
-| format | Format as [moment](http://momentjs.com/) | string | 'HH:mm:ss' |  |
+| format | Format as [dayjs](https://day.js.org/) | string | `HH:mm:ss` |  |
+| prefix | The prefix node of value | ReactNode | - |  |
+| suffix | The suffix node of value | ReactNode | - |  |
+| title | Display title | ReactNode | - |  |
+| value | Set target countdown time | number | - |  |
+| valueStyle | Set value section style | CSSProperties | - |  |
 | onFinish | Trigger when time's up | () => void | - |  |
-| prefix | prefix node of value | string \| ReactNode | - |  |
-| suffix | suffix node of value | string \| ReactNode | - |  |
-| title | Display title | string \| ReactNode | - |  |
-| value | Set target countdown time | number \| moment | - |  |
-| valueStyle | Set value css style | CSSProperties | - |  |
+| onChange | Trigger when time's changing | (value: number) => void | - | 4.16.0 |
+
+## Design Token
+
+<ComponentTokenTable component="Statistic"></ComponentTokenTable>
